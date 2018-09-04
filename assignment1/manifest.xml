@@ -1,0 +1,16 @@
+<package>
+  <description brief="assignment1">
+
+     assignment1
+
+  </description>
+  <author>student</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/assignment1</url>
+  <depend package="turtlesim"/>
+  <depend package="roscpp"/>
+
+</package>
+
+
