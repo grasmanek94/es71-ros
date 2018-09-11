@@ -17,30 +17,7 @@ ros::Subscriber pose_subscriber;
 
 turtlesim::Pose turtlesim_pose;
 
-void PoseCallback(const turtlesim::Pose::ConstPtr& message);
-void DrawTriangleCallback(const assignment1::Triangle::ConstPtr& message);
-void MoveRotateCallback(const assignment1::MoveRotate::ConstPtr& message);
-
 const double PI = 3.14159265359;
-
-int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "cmd");
-	ros::NodeHandle n;
-
-	publisher_draw_triangle = n.advertise<assignment1::Triangle>("cmd/draw_triangle", 10);
-	publisher_move_rotate = n.advertise<assignment1::MoveRotate>("cmd/move_rotate", 10);
-	velocity_publisher = n.advertise<geometry_msgs::Twist>("turtle1/cmd_vel", 10);
-	pose_subscriber = n.subscribe("/turtle1/pose", 10, PoseCallback);
-	subscriber_draw_triangle = n.subscribe("cmd/draw_triangle", 10, DrawTriangleCallback);
-	subscriber_move_rotate = n.subscribe("cmd/move_rotate", 10, MoveRotateCallback);
-
-	std::cout << "main: Prepared callbacks, spinning..." << std::endl;
-
-	ros::spin();
-
-	return 0;
-}
 
 double Sign(double a)
 {
@@ -61,23 +38,23 @@ double ClampAngle(double radians)
 {
 	while (radians > PI)
 	{
-		radians -= PI;
+		radians -= 2.0 * PI;
 	}
-	while (radians < PI)
+	while (radians < -PI)
 	{
-		radians += PI;
+		radians += 2.0 * PI;
 	}
 	return radians;
 }
 
-double Direction(const turtlesim::Pose& v1, const turtlesim::Pose& v2)
+double Direction(const turtlesim::Pose& target, const turtlesim::Pose& current)
 {
-	return ((v1.theta - std::atan2(v1.y - v2.y, v1.x - v2.x)) >= 0.0) ? 1.0 : -1.0;
+	return std::cos(target.theta - std::atan2(target.y - current.y, target.x - current.x));
 }
 
-double Distance(const turtlesim::Pose& a, const turtlesim::Pose& b)
+double Distance(const turtlesim::Pose& target, const turtlesim::Pose& current)
 {
-	return Sign(Direction(a,b)) * std::sqrt(pow(a.x - b.x, 2.0) + pow(a.y - b.y, 2.0));
+	return Sign(Direction(target, current)) * std::sqrt(pow(target.x - current.x, 2.0) + pow(target.y - current.y, 2.0));
 }
 
 turtlesim::Pose GetTargetPosition(const turtlesim::Pose& start, double distance)
@@ -160,8 +137,8 @@ void DrawTriangle(float side_length, bool cw)
 	SetAngle(0.0);
 	for (size_t i = 0; i < 3; ++i)
 	{
-		MoveRotate(1.0, side_length, 0.0);
-		MoveRotate(1.0, 0.0, 60.0);
+		MoveRotate(10.0, side_length, 0.0);
+		MoveRotate(10.0, 0.0, (cw ? -1.0 : 1.0) * 120.0);
 	}
 }
 
@@ -173,4 +150,23 @@ void DrawTriangleCallback(const assignment1::Triangle::ConstPtr& message)
 void MoveRotateCallback(const assignment1::MoveRotate::ConstPtr& message)
 {
 	MoveRotate(message->speed, message->distance, message->angle);
+}
+
+int main(int argc, char **argv)
+{
+	ros::init(argc, argv, "cmd");
+	ros::NodeHandle n;
+
+	publisher_draw_triangle = n.advertise<assignment1::Triangle>("cmd/draw_triangle", 10);
+	publisher_move_rotate = n.advertise<assignment1::MoveRotate>("cmd/move_rotate", 10);
+	velocity_publisher = n.advertise<geometry_msgs::Twist>("turtle1/cmd_vel", 10);
+	pose_subscriber = n.subscribe("/turtle1/pose", 10, PoseCallback);
+	subscriber_draw_triangle = n.subscribe("cmd/draw_triangle", 10, DrawTriangleCallback);
+	subscriber_move_rotate = n.subscribe("cmd/move_rotate", 10, MoveRotateCallback);
+
+	std::cout << "main: Prepared callbacks, spinning..." << std::endl;
+
+	ros::spin();
+
+	return 0;
 }
