@@ -10,7 +10,6 @@
   <url>http://ros.org/wiki/assignment1</url>
   <depend package="turtlesim"/>
   <depend package="roscpp"/>
-
 </package>
 
 
