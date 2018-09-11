@@ -73,8 +73,6 @@ turtlesim::Pose GetTargetPosition(const turtlesim::Pose& start, double distance)
 
 void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& move_distance)
 {
-	std::cout << "FixBounds from (" << current.x << ", " << current.y << ") to (" << target.x << ", " << target.y << ") D: " << move_distance << std::endl;
-
 	const double max_bounds = 10.50; // beetje speling laten t.o.v. 11.0
 	const double min_bounds = 0.50; // beetje speling laten t.o.v. 0.0
 
@@ -106,7 +104,6 @@ void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& 
 	{
 		double sign = Sign(move_distance);
 		move_distance = AbsDistance(target, current);
-		std::cout << "Position fixed to (" << target.x << ", " << target.y << ") D: " << move_distance << std::endl;
 	}
 }
 
@@ -129,9 +126,9 @@ void MoveRotate(double speed, double move_distance, double rotate_degrees)
 		{
 			double delta_angle = target_radians - ClampAngle(turtlesim_pose.theta);
 
-			twist.angular.z = speed * Sign(delta_angle) * std::abs(delta_angle / rotate_radians);
+			twist.angular.z = std::max(speed * std::abs(delta_angle / rotate_radians), 0.05) * Sign(delta_angle);
 
-			loop = std::abs(delta_angle) > 0.01;
+			loop = std::abs(delta_angle) > 0.001;
 
 			velocity_publisher.publish(twist);
 			ros::spinOnce();
@@ -151,9 +148,9 @@ void MoveRotate(double speed, double move_distance, double rotate_degrees)
 		do
 		{
 			double delta_distance = Distance(target_pose, turtlesim_pose);
-			twist.linear.x = speed * Sign(delta_distance) * std::abs(delta_distance / move_distance);
+			twist.linear.x = std::max(speed * std::abs(delta_distance / move_distance), 0.1) * Sign(delta_distance);
 
-			loop = std::abs(delta_distance) > 0.05;
+			loop = std::abs(delta_distance) > 0.005;
 
 			velocity_publisher.publish(twist);
 			ros::spinOnce();
@@ -178,12 +175,34 @@ void PoseCallback(const turtlesim::Pose::ConstPtr& message)
 	turtlesim_pose.theta = message->theta;
 }
 
+double GetMaxTriangleSide(double move_distance, bool cw)
+{
+	double sign = Sign(move_distance);
+
+	turtlesim::Pose current = turtlesim_pose;
+	turtlesim::Pose target;
+
+	for (size_t i = 0; i < 3; ++i)
+	{
+		turtlesim::Pose target = GetTargetPosition(current, move_distance);
+		FixBounds(current, target, move_distance);
+		move_distance = AbsDistance(target, current) * sign;
+
+		target.theta = ClampAngle(target.theta + Deg2Rad((cw ? -1.0 : 1.0) * 120.0));
+		current = target;
+	}
+
+	return move_distance;
+}
+
 void DrawTriangle(float side_length, bool cw)
 {
 	SetAngle(0.0);
+	double fixed_length = GetMaxTriangleSide(side_length, cw);
+
 	for (size_t i = 0; i < 3; ++i)
 	{
-		MoveRotate(5.0, side_length, 0.0);
+		MoveRotate(5.0, fixed_length, 0.0);
 		MoveRotate(5.0, 0.0, (cw ? -1.0 : 1.0) * 120.0);
 	}
 }
