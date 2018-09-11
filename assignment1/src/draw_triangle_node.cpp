@@ -73,7 +73,11 @@ turtlesim::Pose GetTargetPosition(const turtlesim::Pose& start, double distance)
 
 void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& move_distance)
 {
+	std::cout << "FixBounds from (" << current.x << ", " << current.y << ") to (" << target.x << ", " << target.y << ") D: " << move_distance << std::endl;
+
 	const double max_bounds = 10.50; // beetje speling laten t.o.v. 11.0
+	const double min_bounds = 0.50; // beetje speling laten t.o.v. 0.0
+
 	bool updated = false;
 
 	if (target.x > max_bounds)
@@ -81,9 +85,9 @@ void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& 
 		target.x = max_bounds;
 		updated = true;
 	}
-	else if (target.x < -max_bounds)
+	else if (target.x < min_bounds)
 	{
-		target.x = -max_bounds;
+		target.x = min_bounds;
 		updated = true;
 	}
 
@@ -92,9 +96,9 @@ void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& 
 		target.y = max_bounds;
 		updated = true;
 	}
-	else if (target.y < -max_bounds)
+	else if (target.y < min_bounds)
 	{
-		target.y = -max_bounds;
+		target.y = min_bounds;
 		updated = true;
 	}
 
@@ -102,6 +106,7 @@ void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& 
 	{
 		double sign = Sign(move_distance);
 		move_distance = AbsDistance(target, current);
+		std::cout << "Position fixed to (" << target.x << ", " << target.y << ") D: " << move_distance << std::endl;
 	}
 }
 
@@ -202,7 +207,7 @@ int main(int argc, char **argv)
 	publisher_draw_triangle = n.advertise<assignment1::Triangle>(name + "/cmd", 10);
 	publisher_move_rotate = n.advertise<assignment1::MoveRotate>(name + "/move_rotate", 10);
 	velocity_publisher = n.advertise<geometry_msgs::Twist>("turtle1/cmd_vel", 10);
-	pose_subscriber = n.subscribe("/turtle1/pose", 10, PoseCallback);
+	pose_subscriber = n.subscribe("turtle1/pose", 10, PoseCallback);
 	subscriber_draw_triangle = n.subscribe(name + "/cmd", 10, DrawTriangleCallback);
 	subscriber_move_rotate = n.subscribe(name + "/move_rotate", 10, MoveRotateCallback);
 
