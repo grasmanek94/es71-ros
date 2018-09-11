@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 
 #include <ros/ros.h>
 #include <std_msgs/String.h>
@@ -19,6 +20,8 @@ turtlesim::Pose turtlesim_pose;
 void PoseCallback(const turtlesim::Pose::ConstPtr& message);
 void DrawTriangleCallback(const assignment1::Triangle::ConstPtr& message);
 void MoveRotateCallback(const assignment1::MoveRotate::ConstPtr& message);
+
+const double PI = 3.14159265359;
 
 int main(int argc, char **argv)
 {
@@ -41,52 +44,102 @@ int main(int argc, char **argv)
 
 double Sign(double a)
 {
-	return a > 0.0 ? 1.0 : -1.0;
+	if (a == 0.0)
+	{
+		return 0.0;
+	}
+
+	return (a > 0.0 ? 1.0 : -1.0);
 }
 
-double DeltaE(double a, double b)
+double Deg2Rad(double angle_in_degrees)
 {
-	return (a - b) * 100.0;
+	return angle_in_degrees * PI / 180.0;
+}
+
+double ClampAngle(double radians)
+{
+	while (radians > PI)
+	{
+		radians -= PI;
+	}
+	while (radians < PI)
+	{
+		radians += PI;
+	}
+	return radians;
+}
+
+double Direction(const turtlesim::Pose& v1, const turtlesim::Pose& v2)
+{
+	return ((v1.theta - std::atan2(v1.y - v2.y, v1.x - v2.x)) >= 0.0) ? 1.0 : -1.0;
 }
 
 double Distance(const turtlesim::Pose& a, const turtlesim::Pose& b)
 {
-	return sqrt(pow(a.x - b.x, 2.0) + pow(a.y - b.y, 2.0));
+	return Sign(Direction(a,b)) * std::sqrt(pow(a.x - b.x, 2.0) + pow(a.y - b.y, 2.0));
 }
 
-void MoveRotate(double speed, double move_distance, double rotate_radians)
+turtlesim::Pose GetTargetPosition(const turtlesim::Pose& start, double distance)
 {
-	std::cout << "Received MoveRotate(" << speed << ", " << move_distance << ", " << rotate_radians << ")" << std::endl;
+	turtlesim::Pose temp = start;
+	temp.x += (distance * sin(-temp.theta + PI / 2));
+	temp.y += (distance * cos(-temp.theta + PI / 2));
+	return temp;
+}
 
-	ros::Rate loop_rate(10);
+void MoveRotate(double speed, double move_distance, double rotate_degrees)
+{
 	geometry_msgs::Twist twist;
+	bool loop;
 
-	turtlesim::Pose saved_pose = turtlesim_pose;
-	bool loop = true;
+	ros::Rate loop_rate(1000);
 
-	do
+	if (rotate_degrees != 0.0)
 	{
-		twist.linear.x = speed * DeltaE(Distance(saved_pose, turtlesim_pose), abs(move_distance)) * Sign(move_distance);
-		twist.angular.z = speed * DeltaE(saved_pose.theta + rotate_radians, turtlesim_pose.theta);
-
-		loop = 
-			abs(twist.linear.x) > 0.1 || 
-			abs(twist.angular.z) > 0.1;
-		if (!loop)
-		{
-			std::cout << "Aborting loop in MoveRotate(" << speed << ", " << move_distance << ", " << rotate_radians << ")" << std::endl;
-		}
-		else
-		{
-			std::cout << "(" << saved_pose.x << ", " << saved_pose.y << ") -> (" << turtlesim_pose.x << ", " << turtlesim_pose.y << "): " << (DeltaE(Distance(saved_pose, turtlesim_pose), abs(move_distance)) * Sign(move_distance)) << std::endl;
-		}
-
-		velocity_publisher.publish(twist);
 		ros::spinOnce();
-		loop_rate.sleep();
-	} while (loop);
+		turtlesim::Pose saved_pose = turtlesim_pose;
 
-	velocity_publisher.publish(geometry_msgs::Twist());
+		double rotate_radians = ClampAngle(Deg2Rad(rotate_degrees));
+		double target_radians = ClampAngle(saved_pose.theta + rotate_radians);
+
+		do
+		{
+			double delta_angle = target_radians - ClampAngle(turtlesim_pose.theta);
+
+			twist.angular.z = speed * Sign(delta_angle) * std::abs(delta_angle / rotate_radians);
+
+			loop = std::abs(delta_angle) > 0.01;
+
+			velocity_publisher.publish(twist);
+			ros::spinOnce();
+			loop_rate.sleep();
+		} while (loop);
+
+		twist.angular.z = 0.0;
+		velocity_publisher.publish(twist);
+	}
+
+	if (move_distance != 0.0)
+	{
+		ros::spinOnce();
+		turtlesim::Pose target_pose = GetTargetPosition(turtlesim_pose, move_distance);
+
+		do
+		{
+			double delta_distance = Distance(target_pose, turtlesim_pose);
+			twist.linear.x = speed * Sign(delta_distance) * std::abs(delta_distance / move_distance);
+
+			loop = std::abs(delta_distance) > 0.05;
+
+			velocity_publisher.publish(twist);
+			ros::spinOnce();
+			loop_rate.sleep();
+		} while (loop);
+
+		twist.linear.x = 0.0;
+		velocity_publisher.publish(twist);
+	}
 }
 
 void SetAngle(double radians)
@@ -102,19 +155,13 @@ void PoseCallback(const turtlesim::Pose::ConstPtr& message)
 	turtlesim_pose.theta = message->theta;
 }
 
-double degrees2radians(double angle_in_degrees) 
-{
-	const double PI = 3.14159265359;
-	return angle_in_degrees * PI / 180.0;
-}
-
 void DrawTriangle(float side_length, bool cw)
 {
 	SetAngle(0.0);
 	for (size_t i = 0; i < 3; ++i)
 	{
 		MoveRotate(1.0, side_length, 0.0);
-		MoveRotate(1.0, 0.0, degrees2radians(60.0));
+		MoveRotate(1.0, 0.0, 60.0);
 	}
 }
 
