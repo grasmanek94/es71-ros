@@ -138,8 +138,8 @@ void DrawTriangle(float side_length, bool cw)
 	SetAngle(0.0);
 	for (size_t i = 0; i < 3; ++i)
 	{
-		MoveRotate(10.0, side_length, 0.0);
-		MoveRotate(10.0, 0.0, (cw ? -1.0 : 1.0) * 120.0);
+		MoveRotate(5.0, side_length, 0.0);
+		MoveRotate(5.0, 0.0, (cw ? -1.0 : 1.0) * 120.0);
 	}
 }
 
