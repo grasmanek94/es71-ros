@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <string>
 
 #include <ros/ros.h>
 #include <std_msgs/String.h>
@@ -152,17 +153,18 @@ void MoveRotateCallback(const assignment1::MoveRotate::ConstPtr& message)
 	MoveRotate(message->speed, message->distance, message->angle);
 }
 
+std::string name = "draw_triangle";
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "cmd");
+	ros::init(argc, argv, name);
 	ros::NodeHandle n;
 
-	publisher_draw_triangle = n.advertise<assignment1::Triangle>("cmd/draw_triangle", 10);
-	publisher_move_rotate = n.advertise<assignment1::MoveRotate>("cmd/move_rotate", 10);
+	publisher_draw_triangle = n.advertise<assignment1::Triangle>(name + "/cmd", 10);
+	publisher_move_rotate = n.advertise<assignment1::MoveRotate>(name + "/move_rotate", 10);
 	velocity_publisher = n.advertise<geometry_msgs::Twist>("turtle1/cmd_vel", 10);
 	pose_subscriber = n.subscribe("/turtle1/pose", 10, PoseCallback);
-	subscriber_draw_triangle = n.subscribe("cmd/draw_triangle", 10, DrawTriangleCallback);
-	subscriber_move_rotate = n.subscribe("cmd/move_rotate", 10, MoveRotateCallback);
+	subscriber_draw_triangle = n.subscribe(name + "/cmd", 10, DrawTriangleCallback);
+	subscriber_move_rotate = n.subscribe(name + "/move_rotate", 10, MoveRotateCallback);
 
 	std::cout << "main: Prepared callbacks, spinning..." << std::endl;
 
