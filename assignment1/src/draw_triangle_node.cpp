@@ -53,9 +53,14 @@ double Direction(const turtlesim::Pose& target, const turtlesim::Pose& current)
 	return std::cos(target.theta - std::atan2(target.y - current.y, target.x - current.x));
 }
 
+double AbsDistance(const turtlesim::Pose& target, const turtlesim::Pose& current)
+{
+	return std::sqrt(pow(target.x - current.x, 2.0) + pow(target.y - current.y, 2.0));
+}
+
 double Distance(const turtlesim::Pose& target, const turtlesim::Pose& current)
 {
-	return Sign(Direction(target, current)) * std::sqrt(pow(target.x - current.x, 2.0) + pow(target.y - current.y, 2.0));
+	return Sign(Direction(target, current)) * AbsDistance(target, current);
 }
 
 turtlesim::Pose GetTargetPosition(const turtlesim::Pose& start, double distance)
@@ -64,6 +69,40 @@ turtlesim::Pose GetTargetPosition(const turtlesim::Pose& start, double distance)
 	temp.x += (distance * sin(-temp.theta + PI / 2));
 	temp.y += (distance * cos(-temp.theta + PI / 2));
 	return temp;
+}
+
+void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& move_distance)
+{
+	const double max_bounds = 10.50; // beetje speling laten t.o.v. 11.0
+	bool updated = false;
+
+	if (target.x > max_bounds)
+	{
+		target.x = max_bounds;
+		updated = true;
+	}
+	else if (target.x < -max_bounds)
+	{
+		target.x = -max_bounds;
+		updated = true;
+	}
+
+	if (target.y > max_bounds)
+	{
+		target.y = max_bounds;
+		updated = true;
+	}
+	else if (target.y < -max_bounds)
+	{
+		target.y = -max_bounds;
+		updated = true;
+	}
+
+	if (updated)
+	{
+		double sign = Sign(move_distance);
+		move_distance = AbsDistance(target, current);
+	}
 }
 
 void MoveRotate(double speed, double move_distance, double rotate_degrees)
@@ -102,6 +141,7 @@ void MoveRotate(double speed, double move_distance, double rotate_degrees)
 	{
 		ros::spinOnce();
 		turtlesim::Pose target_pose = GetTargetPosition(turtlesim_pose, move_distance);
+		FixBounds(turtlesim_pose, target_pose, move_distance);
 
 		do
 		{
