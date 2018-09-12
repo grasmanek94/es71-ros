@@ -10,8 +10,6 @@
 #include <assignment1/MoveRotate.h>
 
 ros::Publisher velocity_publisher;
-ros::Publisher publisher_draw_triangle;
-ros::Publisher publisher_move_rotate;
 ros::Subscriber subscriber_draw_triangle;
 ros::Subscriber subscriber_move_rotate;
 ros::Subscriber pose_subscriber;
@@ -223,8 +221,6 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, name);
 	ros::NodeHandle n;
 
-	publisher_draw_triangle = n.advertise<assignment1::Triangle>(name + "/cmd", 10);
-	publisher_move_rotate = n.advertise<assignment1::MoveRotate>(name + "/move_rotate", 10);
 	velocity_publisher = n.advertise<geometry_msgs::Twist>("turtle1/cmd_vel", 10);
 	pose_subscriber = n.subscribe("turtle1/pose", 10, PoseCallback);
 	subscriber_draw_triangle = n.subscribe(name + "/cmd", 10, DrawTriangleCallback);
