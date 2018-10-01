@@ -1,7 +1,7 @@
 <launch>
   <group ns="stagesim">
     <node pkg="stage_ros" name="stageros" type="stageros">
-        <param name="worldfile" value="$(find assignment2)/data/empty.world" />
+        <param name="worldfile" value="$(find assignment2)/world/empty.world" />
     </node>
     <node pkg="assignment2" name="steering_pointshoot" type="steering_pointshoot_node"/>
   </group>
