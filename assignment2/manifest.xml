@@ -1,0 +1,16 @@
+<package>
+  <description brief="assignment2">
+
+     assignment2
+
+  </description>
+  <author>student</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/assignment2</url>
+  <depend package="stage_ros"/>
+  <depend package="roscpp"/>
+
+</package>
+
+
