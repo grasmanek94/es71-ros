@@ -2,3 +2,4 @@ build/
 bin/
 msg_gen/
 src/assignment2/
+data/~*
