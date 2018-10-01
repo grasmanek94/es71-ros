@@ -1,8 +1,6 @@
 <launch>
   <group ns="stagesim">
-    <node pkg="stage_ros" name="stageros" type="stageros">
-        <param name="worldfile" value="$(find assignment2)/world/empty.world" />
-    </node>
-    <node pkg="assignment2" name="steering_servoing" type="steering_servoing_node"/>
+    <node pkg="stage_ros" name="stageros" type="stageros" args="$(find assignment2)/world/empty.world" />
+    <node pkg="assignment2" name="steering_servoing" type="steering_servoing_node" />
   </group>
 </launch>
