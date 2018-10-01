@@ -1,6 +1,6 @@
 <launch>
   <group ns="stagesim">
     <node pkg="stage_ros" name="stageros" type="stageros" args="$(find assignment2)/world/empty.world" />
-    <node pkg="assignment2" name="steering_pointshoot" type="steering_pointshoot_node" />
+    <node pkg="assignment2" name="steering_pointshoot" type="steering_pointshoot_node" output="screen" />
   </group>
 </launch>
