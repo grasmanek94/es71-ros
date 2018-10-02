@@ -111,13 +111,13 @@ bool PerformMoveTick(LoopData& data)
 	//{
 		tfScalar O = tf::getYaw(current_quat);
 
-		//tfScalar r = tf::getYaw(target_quat);
+		tfScalar r = tf::getYaw(target_quat);
 		//O += r * std::pow(1.0 - std::min(p / initial_distance, 1.0), 4.0);
 
 		tfScalar ka = 2.0;
 		tfScalar kb = -1.0;
 		tfScalar a = angles::normalize_angle(-O + atan2(xhat.y(), xhat.x()));
-		tfScalar b = angles::normalize_angle(-O - a);
+		tfScalar b = angles::normalize_angle(-O - a - r);
 		tfScalar w = ka * a + kb * b;
 
 		if (abs(w) < 0.01)
