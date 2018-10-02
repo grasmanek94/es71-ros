@@ -10,18 +10,9 @@
 #include <tf/LinearMath/Vector3.h>
 #include <angles/angles.h>
 
-#include <iostream>
-#include <string>
-
-const double PI = 3.14159265359;
-
 ros::Publisher velocity;
 ros::Subscriber odom;
 ros::Subscriber goal;
-
-tf::Quaternion initial_quat;
-tf::Vector3 initial_pos;
-tfScalar initial_distance;
 
 tf::Quaternion current_quat;
 tf::Vector3 current_pos;
@@ -30,14 +21,7 @@ tf::Quaternion target_quat;
 tf::Vector3 target_pos;
 
 void PerformMoveLoop();
-
-struct LoopData
-{
-	bool move;
-	bool rotate;
-};
-
-bool PerformMoveTick(LoopData& data);
+bool PerformMoveTick(bool& move, bool& rotate);
 
 void OdomCallback(const nav_msgs::OdometryConstPtr& message)
 {
@@ -69,17 +53,12 @@ void PerformMoveLoop()
 
 	bool keep_moving = true;
 
-	LoopData data;
-	data.move = true;
-	data.rotate = true;
-
-	initial_quat = current_quat;
-	initial_pos = current_pos;
-	initial_distance = initial_pos.distance(target_pos);
+	bool move = true;
+	bool rotate = true;
 
 	do
 	{
-		keep_moving = PerformMoveTick(data);
+		keep_moving = PerformMoveTick(move, rotate);
 		loop_rate.sleep();
 		ros::spinOnce();
 	} while (keep_moving);
@@ -87,7 +66,7 @@ void PerformMoveLoop()
 	velocity.publish(geometry_msgs::Twist());
 }
 
-bool PerformMoveTick(LoopData& data)
+bool PerformMoveTick(bool& move, bool& rotate)
 {
 	geometry_msgs::Twist twist;
 
@@ -96,9 +75,9 @@ bool PerformMoveTick(LoopData& data)
 	tfScalar kp = 1.0;
 	tfScalar v = kp * p;
 
-	if (p < 0.05)
+	if (p < 0.001)
 	{
-		data.move = false;
+		move = false;
 	}
 
 	twist.linear.x = v;
@@ -106,23 +85,23 @@ bool PerformMoveTick(LoopData& data)
 	tfScalar O = tf::getYaw(current_quat);
 
 	tfScalar r = tf::getYaw(target_quat);
-
+	
 	tfScalar ka = 2.0;
 	tfScalar kb = -1.0;
 	tfScalar a = angles::normalize_angle(-O + atan2(xhat.y(), xhat.x()));
 	tfScalar b = angles::normalize_angle(-O - a - r);
 	tfScalar w = ka * a + kb * b;
 
-	if (abs(w) < 0.005)
+	if (abs(w) < 0.0002)
 	{
-		data.rotate = false;
+		rotate = false;
 	}
 
 	twist.angular.z = w;
 
 	velocity.publish(twist);
 
-	return data.move || data.rotate;
+	return move || rotate;
 }
 
 int main(int argc, char **argv)
@@ -133,8 +112,6 @@ int main(int argc, char **argv)
 	velocity = n.advertise<geometry_msgs::Twist>("/stagesim/cmd_vel", 10);
 	odom = n.subscribe("/stagesim/odom", 10, OdomCallback);
 	goal = n.subscribe("steering_servoing/goal", 10, GoalCallback);
-
-	std::cout << "main: Prepared callbacks, spinning..." << std::endl;
 
 	ros::spin();
 
