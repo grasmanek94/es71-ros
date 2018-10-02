@@ -52,7 +52,7 @@ void GoalCallback(const geometry_msgs::PointConstPtr& message)
 	geometry_msgs::Point target_point = *message;
 
 	tf::Quaternion quat;
-	quat.setRPY(0.0, 0.0, angles::normalize_angle(target_point.z));
+	quat.setRPY(0.0, 0.0, angles::normalize_angle(angles::from_degrees(target_point.z)));
 	quat.normalize();
 
 	target_quat = quat;
@@ -90,43 +90,35 @@ void PerformMoveLoop()
 bool PerformMoveTick(LoopData& data)
 {
 	geometry_msgs::Twist twist;
+
 	tf::Vector3 xhat = target_pos - current_pos;
-	tfScalar p = 0.0;
+	tfScalar p = xhat.length();
+	tfScalar kp = 1.0;
+	tfScalar v = kp * p;
 
-	//if (data.move)
-	//{		
-		p = xhat.length();
-		tfScalar kp = 1.0;
-		tfScalar v = kp * p;
+	if (p < 0.05)
+	{
+		data.move = false;
+	}
 
-		if (p < 0.05)
-		{
-			data.move = false;
-		}
+	twist.linear.x = v;
 
-		twist.linear.x = v;
-	//}
+	tfScalar O = tf::getYaw(current_quat);
 
-	//if (data.rotate)
-	//{
-		tfScalar O = tf::getYaw(current_quat);
+	tfScalar r = tf::getYaw(target_quat);
 
-		tfScalar r = tf::getYaw(target_quat);
-		//O += r * std::pow(1.0 - std::min(p / initial_distance, 1.0), 4.0);
+	tfScalar ka = 2.0;
+	tfScalar kb = -1.0;
+	tfScalar a = angles::normalize_angle(-O + atan2(xhat.y(), xhat.x()));
+	tfScalar b = angles::normalize_angle(-O - a - r);
+	tfScalar w = ka * a + kb * b;
 
-		tfScalar ka = 2.0;
-		tfScalar kb = -1.0;
-		tfScalar a = angles::normalize_angle(-O + atan2(xhat.y(), xhat.x()));
-		tfScalar b = angles::normalize_angle(-O - a - r);
-		tfScalar w = ka * a + kb * b;
+	if (abs(w) < 0.005)
+	{
+		data.rotate = false;
+	}
 
-		if (abs(w) < 0.01)
-		{
-			data.rotate = false;
-		}
-
-		twist.angular.z = w;
-	//}
+	twist.angular.z = w;
 
 	velocity.publish(twist);
 
