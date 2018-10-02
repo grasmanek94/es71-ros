@@ -8,9 +8,12 @@
 #include <tf/transform_datatypes.h>
 #include <tf/LinearMath/Quaternion.h>
 #include <tf/LinearMath/Vector3.h>
+#include <angles/angles.h>
 
 #include <iostream>
 #include <string>
+
+const double PI = 3.14159265359;
 
 ros::Publisher velocity;
 ros::Subscriber odom;
@@ -27,7 +30,14 @@ tf::Quaternion target_quat;
 tf::Vector3 target_pos;
 
 void PerformMoveLoop();
-bool PerformMoveTick();
+
+struct LoopData
+{
+	bool move;
+	bool rotate;
+};
+
+bool PerformMoveTick(LoopData& data);
 
 void OdomCallback(const nav_msgs::OdometryConstPtr& message)
 {
@@ -42,7 +52,7 @@ void GoalCallback(const geometry_msgs::PointConstPtr& message)
 	geometry_msgs::Point target_point = *message;
 
 	tf::Quaternion quat;
-	quat.setRPY(0.0, 0.0, target_point.z);
+	quat.setRPY(0.0, 0.0, angles::normalize_angle(target_point.z));
 	quat.normalize();
 
 	target_quat = quat;
@@ -55,8 +65,13 @@ void GoalCallback(const geometry_msgs::PointConstPtr& message)
 
 void PerformMoveLoop()
 {
-	ros::Rate loop_rate(1000);
+	ros::Rate loop_rate(25);
+
 	bool keep_moving = true;
+
+	LoopData data;
+	data.move = true;
+	data.rotate = true;
 
 	initial_quat = current_quat;
 	initial_pos = current_pos;
@@ -64,38 +79,58 @@ void PerformMoveLoop()
 
 	do
 	{
-		keep_moving = PerformMoveTick();
+		keep_moving = PerformMoveTick(data);
 		loop_rate.sleep();
 		ros::spinOnce();
 	} while (keep_moving);
+
+	velocity.publish(geometry_msgs::Twist());
 }
 
-bool PerformMoveTick()
+bool PerformMoveTick(LoopData& data)
 {
-	tf::Quaternion change_quat = current_quat.slerp(target_quat, 0.1);
-	tfScalar distance = current_pos.distance(target_pos);
-
-	if (distance < 0.1)
-	{
-		return false;
-	}
-
-	tfScalar speed = std::max(10.0 * (distance / initial_distance), 1.0);
-
-	tfScalar yaw, pitch, roll;
-	tf::Matrix3x3 mat;
-	mat.setRotation(change_quat);
-	mat.getEulerYPR(yaw, pitch, roll);
-
-	std::cout << yaw << std::endl;
-
 	geometry_msgs::Twist twist;
-	twist.linear.x = speed;
-	twist.angular.x = yaw * 4.0;
+	tf::Vector3 xhat = target_pos - current_pos;
+	tfScalar p = 0.0;
+
+	//if (data.move)
+	//{		
+		p = xhat.length();
+		tfScalar kp = 1.0;
+		tfScalar v = kp * p;
+
+		if (p < 0.05)
+		{
+			data.move = false;
+		}
+
+		twist.linear.x = v;
+	//}
+
+	//if (data.rotate)
+	//{
+		tfScalar O = tf::getYaw(current_quat);
+
+		//tfScalar r = tf::getYaw(target_quat);
+		//O += r * std::pow(1.0 - std::min(p / initial_distance, 1.0), 4.0);
+
+		tfScalar ka = 2.0;
+		tfScalar kb = -1.0;
+		tfScalar a = angles::normalize_angle(-O + atan2(xhat.y(), xhat.x()));
+		tfScalar b = angles::normalize_angle(-O - a);
+		tfScalar w = ka * a + kb * b;
+
+		if (abs(w) < 0.01)
+		{
+			data.rotate = false;
+		}
+
+		twist.angular.z = w;
+	//}
 
 	velocity.publish(twist);
 
-	return true;
+	return data.move || data.rotate;
 }
 
 int main(int argc, char **argv)
