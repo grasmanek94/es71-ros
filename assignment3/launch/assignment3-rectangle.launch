@@ -1,0 +1,7 @@
+<launch>
+  <group ns="stagesim">
+    <node pkg="stage_ros" name="stageros" type="stageros" args="$(find assignment3)/world/empty.world" />
+    <node pkg="assignment3" name="follow_carrot" type="follow_carrot_node" output="screen" />
+    <node pkg="assignment3" name="rectangle_planner" type="rectangle_planner_node" output="screen" />
+  </group>
+</launch>

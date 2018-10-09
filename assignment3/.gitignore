@@ -1,0 +1,5 @@
+build/
+bin/
+msg_gen/
+src/assignment3/
+data/~*
