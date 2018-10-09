@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/assignment3</url>
   <depend package="stage_ros"/>
+  <depend package="tf"/>
   <depend package="roscpp"/>
 
 </package>
