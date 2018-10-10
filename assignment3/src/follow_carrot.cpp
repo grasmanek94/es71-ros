@@ -20,7 +20,7 @@ ros::Subscriber plan_sub;
 
 tf::Quaternion current_quat;
 tf::Vector3 current_pos;
-
+std::shared_ptr<tf::TransformListener> listener;
 void UpdatePosition(const tf::StampedTransform& transform)
 {
 	current_pos.setX(transform.getOrigin().x());
@@ -32,19 +32,18 @@ void UpdatePosition(const tf::StampedTransform& transform)
 void GetUpdatedTransform()
 {
 	tf::StampedTransform transform;
-	tf::TransformListener listener;
+
 	while (true && ros::ok())
 	{
 		try
 		{
-			listener.lookupTransform("/odom", "/base_link", ros::Time(0), transform);
+			listener->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
 			UpdatePosition(transform);
-			return;
 		}
 		catch (const tf::TransformException& ex)
 		{
 			ROS_ERROR("%s", ex.what());
-			ros::Duration(1.0).sleep();
+			ros::Duration(0.01).sleep();
 		}
 	}
 }
@@ -112,6 +111,8 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "follow_carrot_node");
 	ros::NodeHandle n;
+
+	listener = std::make_shared<tf::TransformListener>();
 
 	velocity = n.advertise<geometry_msgs::Twist>("/stagesim/cmd_vel", 10);
 	plan_sub = n.subscribe("assignment3/plan", 10, PlanCallback);

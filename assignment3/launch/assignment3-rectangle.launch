@@ -1,4 +1,5 @@
 <launch>
+  <param name="/use_sim_time" value="true"/>
   <group ns="stagesim">
     <node pkg="stage_ros" name="stageros" type="stageros" args="$(find assignment3)/world/empty.world" />
     <node pkg="tf" type="static_transform_publisher" name="localizer" args="0 0 0 0 0 0 map odom 100" />
