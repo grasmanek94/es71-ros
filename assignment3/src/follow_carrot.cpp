@@ -30,29 +30,28 @@ void UpdatePosition(const tf::StampedTransform& transform)
 	current_quat = transform.getRotation();
 }
 
-void GetUpdatedTransform()
+bool GetUpdatedTransform()
 {
 	tf::StampedTransform transform;
 
-	while (true && ros::ok())
+	try
 	{
-		try
+		ros::Time time = ros::Time(0);
+		ros::Duration duration;
+		duration = duration.fromSec(0.01);
+		if (listener->waitForTransform("/odom", "/base_link", time, duration))
 		{
-			ros::Time time = ros::Time(0);
-			ros::Duration duration;
-			duration = duration.fromSec(0.01);
-			if (listener->waitForTransform("/odom", "/base_link", time, duration))
-			{
-				listener->lookupTransform("/odom", "/base_link", time, transform);
-				UpdatePosition(transform);
-			}
-		}
-		catch (const tf::TransformException& ex)
-		{
-			ROS_ERROR("%s", ex.what());
-			ros::Duration(0.01).sleep();
+			listener->lookupTransform("/odom", "/base_link", time, transform);
+			UpdatePosition(transform);
+			return true;
 		}
 	}
+	catch (const tf::TransformException& ex)
+	{
+		ROS_ERROR("%s", ex.what());
+		ros::Duration(0.01).sleep();
+	}
+	return false;
 }
 
 void PerformFollowPoint(const geometry_msgs::PoseStamped& goal, const geometry_msgs::PoseStamped& next_goal, bool last)
@@ -63,26 +62,27 @@ void PerformFollowPoint(const geometry_msgs::PoseStamped& goal, const geometry_m
 	const double look_ahead_dist = 3.0;
 	const double speed = 1.0;
 	const double half_look_ahead_dist_squared = 2.0 / (look_ahead_dist * look_ahead_dist);
-	double distance;
+	double distance = 0.0;
 
 	do
 	{
-		GetUpdatedTransform();
+		if (GetUpdatedTransform())
+		{
+			distance = current_pos.distance(vec_goal);
 
-		distance = current_pos.distance(vec_goal);
+			tf::Vector3 diff = current_pos - vec_goal;
 
-		tf::Vector3 diff = current_pos - vec_goal;
+			double robot_yaw = tf::getYaw(current_quat);
+			double alpha = std::atan2(diff.getY(), diff.getX()) - robot_yaw;
+			double y = std::sin(alpha) * distance;
 
-		double robot_yaw = tf::getYaw(current_quat);
-		double alpha = std::atan2(diff.getY(), diff.getX()) - robot_yaw;
-		double y = std::sin(alpha) * distance;
+			double w = half_look_ahead_dist_squared * y;
 
-		double w = half_look_ahead_dist_squared * y;
-
-		twist.angular.z = w * speed;
-		twist.linear.x = speed * (last ? std::sqrt(distance / look_ahead_dist) : 1.0);
-		velocity.publish(twist);
-	} 
+			twist.angular.z = w * speed;
+			twist.linear.x = speed * (last ? std::sqrt(distance / look_ahead_dist) : 1.0);
+			velocity.publish(twist);
+		}
+	}
 	while ((!last && distance < look_ahead_dist) || (last && distance < 0.005));
 
 	if (last)
@@ -98,6 +98,9 @@ void PerformPathFollowing(nav_msgs::Path path)
 	geometry_msgs::PoseStamped goal;
 	geometry_msgs::PoseStamped next_goal;
 
+	size_t size = path.poses.size();
+	std::cout << "PerformPathFollowing size: " << size << std::endl;
+
 	while (ros::ok() && path.poses.size() > 0)
 	{
 		goal = path.poses.front();
@@ -105,6 +108,17 @@ void PerformPathFollowing(nav_msgs::Path path)
 
 		next_goal = path.poses.size() > 0 ? path.poses.front() : goal;
 
+		std::cout
+			<< "Goal("
+			<< goal.pose.position.x << ", "
+			<< goal.pose.position.y << ", "
+			<< angles::to_degrees(tf::getYaw(goal.pose.orientation)) << ") "
+			<< "Next_Goal("
+			<< next_goal.pose.position.x << ", "
+			<< next_goal.pose.position.y << ", "
+			<< angles::to_degrees(tf::getYaw(next_goal.pose.orientation)) << ")"
+			<< std::endl;
+		
 		PerformFollowPoint(goal, next_goal, path.poses.size() == 0);
 	}
 }
