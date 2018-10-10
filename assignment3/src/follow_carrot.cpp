@@ -62,6 +62,8 @@ void PerformFollowPoint(const geometry_msgs::PoseStamped& goal, const geometry_m
 
 	do
 	{
+		GetUpdatedTransform();
+
 		distance = current_pos.distance(vec_goal);
 
 		tf::Vector3 diff = current_pos - vec_goal;
@@ -77,6 +79,13 @@ void PerformFollowPoint(const geometry_msgs::PoseStamped& goal, const geometry_m
 		velocity.publish(twist);
 	} 
 	while ((!last && distance < look_ahead_dist) || (last && distance < 0.005));
+
+	if (last)
+	{
+		twist.angular.z = 0.0;
+		twist.linear.x = 0.0;
+		velocity.publish(twist);
+	}
 }
 
 void PerformPathFollowing(nav_msgs::Path path)
@@ -84,21 +93,14 @@ void PerformPathFollowing(nav_msgs::Path path)
 	geometry_msgs::PoseStamped goal;
 	geometry_msgs::PoseStamped next_goal;
 
-	while (ros::ok())
+	while (ros::ok() && path.poses.size() > 0)
 	{
-		if (path.poses.size() > 0)
-		{
-			goal = path.poses.front();
-			path.poses.erase(path.poses.begin());
+		goal = path.poses.front();
+		path.poses.erase(path.poses.begin());
 
-			next_goal = path.poses.size() ? path.poses.front() : goal;
+		next_goal = path.poses.size() > 0 ? path.poses.front() : goal;
 
-			PerformFollowPoint(goal, next_goal, path.poses.size() == 0);
-		}
-		else
-		{
-			return;
-		}
+		PerformFollowPoint(goal, next_goal, path.poses.size() == 0);
 	}
 }
 

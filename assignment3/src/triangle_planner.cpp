@@ -68,7 +68,7 @@ void CreatePlan(double size)
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "triangle_planner");
+	ros::init(argc, argv, "triangle_planner_node");
 	ros::NodeHandle n;
 
 	odom = n.subscribe("/stagesim/odom", 10, OdomCallback);
