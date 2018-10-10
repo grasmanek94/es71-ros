@@ -23,31 +23,12 @@ tf::TransformListener listener;
 tf::Quaternion current_quat;
 tf::Vector3 current_pos;
 
-void PerformPathFollowing(const nav_msgs::Path& path);
 void UpdatePosition(const tf::StampedTransform& transform)
 {
 	current_pos.setX(transform.getOrigin().x());
 	current_pos.setY(transform.getOrigin().y());
 
 	current_quat = transform.getRotation();
-}
-
-void PlanCallback(const nav_msgs::PathConstPtr& message)
-{
-	PerformPathFollowing(*message);
-}
-
-int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "follow_carrot_node");
-	ros::NodeHandle n;
-
-	velocity = n.advertise<geometry_msgs::Twist>("/stagesim/cmd_vel", 10);
-	plan_sub = n.subscribe("/stagesim/plan", 10, PlanCallback);
-
-	ros::spin();
-
-	return 0;
 }
 
 void GetUpdatedTransform()
@@ -69,9 +50,33 @@ void GetUpdatedTransform()
 	}
 }
 
-bool PerformFollowPoint(const geometry_msgs::PoseStamped& goal, const geometry_msgs::PoseStamped& next_goal, bool last)
+void PerformFollowPoint(const geometry_msgs::PoseStamped& goal, const geometry_msgs::PoseStamped& next_goal, bool last)
 {
+	tf::Vector3 vec_goal(goal.pose.position.x, goal.pose.position.y, goal.pose.position.z);
+	geometry_msgs::Twist twist;
 
+	const double look_ahead_dist = 3.0;
+	const double speed = 1.0;
+	const double half_look_ahead_dist_squared = 2.0 / (look_ahead_dist * look_ahead_dist);
+	double distance;
+
+	do
+	{
+		distance = current_pos.distance(vec_goal);
+
+		tf::Vector3 diff = current_pos - vec_goal;
+
+		double robot_yaw = tf::getYaw(current_quat);
+		double alpha = std::atan2(diff.getY(), diff.getX()) - robot_yaw;
+		double y = std::sin(alpha) * distance;
+
+		double w = half_look_ahead_dist_squared * y;
+
+		twist.angular.z = w * speed;
+		twist.linear.x = speed * (last ? std::sqrt(distance / look_ahead_dist) : 1.0);
+		velocity.publish(twist);
+	} 
+	while ((!last && distance < look_ahead_dist) || (last && distance < 0.005));
 }
 
 void PerformPathFollowing(nav_msgs::Path path)
@@ -86,18 +91,31 @@ void PerformPathFollowing(nav_msgs::Path path)
 			goal = path.poses.front();
 			path.poses.erase(path.poses.begin());
 
-			if (path.poses.size() > 1)
-			{
-				next_goal = path.poses.front();
-			} else {
-				next_goal = goal;
-			}
+			next_goal = path.poses.size() ? path.poses.front() : goal;
 
-			PerformFollowPoint(goal, next_goal, path.poses.size() == 1);
+			PerformFollowPoint(goal, next_goal, path.poses.size() == 0);
 		}
 		else
 		{
 			return;
 		}
 	}
+}
+
+void PlanCallback(const nav_msgs::PathConstPtr& message)
+{
+	PerformPathFollowing(*message);
+}
+
+int main(int argc, char **argv)
+{
+	ros::init(argc, argv, "follow_carrot_node");
+	ros::NodeHandle n;
+
+	velocity = n.advertise<geometry_msgs::Twist>("/stagesim/cmd_vel", 10);
+	plan_sub = n.subscribe("/stagesim/plan", 10, PlanCallback);
+
+	ros::spin();
+
+	return 0;
 }
