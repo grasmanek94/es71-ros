@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
 	odom = n.subscribe("/stagesim/odom", 10, OdomCallback);
 	goal = n.subscribe("/assignment3/goal", 10, GoalCallBack);
-	plan = n.advertise<nav_msgs::Path>("/stagesim/plan", 10);
+	plan = n.advertise<assignment3::Goal>("/stagesim/plan", 10);
 
 	ros::spin();
 
