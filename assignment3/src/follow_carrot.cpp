@@ -18,8 +18,6 @@ ros::Subscriber odom_sub;
 ros::Subscriber tf_sub;
 ros::Subscriber plan_sub;
 
-tf::TransformListener listener;
-
 tf::Quaternion current_quat;
 tf::Vector3 current_pos;
 
@@ -34,6 +32,7 @@ void UpdatePosition(const tf::StampedTransform& transform)
 void GetUpdatedTransform()
 {
 	tf::StampedTransform transform;
+	tf::TransformListener listener;
 	while (true && ros::ok())
 	{
 		try
