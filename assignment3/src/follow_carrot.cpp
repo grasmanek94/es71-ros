@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 
 	velocity = n.advertise<geometry_msgs::Twist>("/stagesim/cmd_vel", 10);
-	plan_sub = n.subscribe("/stagesim/plan", 10, PlanCallback);
+	plan_sub = n.subscribe("assignment3/plan", 10, PlanCallback);
 
 	ros::spin();
 
