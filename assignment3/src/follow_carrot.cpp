@@ -37,8 +37,12 @@ void GetUpdatedTransform()
 	{
 		try
 		{
-			listener->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
-			UpdatePosition(transform);
+			ros::Time time = ros::Time(0);
+			if (listener->waitForTransform("/odom", "/base_link", time, ros::Duration::fromSec(0.01)))
+			{
+				listener->lookupTransform("/odom", "/base_link", time, transform);
+				UpdatePosition(transform);
+			}
 		}
 		catch (const tf::TransformException& ex)
 		{
