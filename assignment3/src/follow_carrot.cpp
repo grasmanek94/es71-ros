@@ -12,7 +12,7 @@
 #include <tf/LinearMath/Quaternion.h>
 #include <tf/LinearMath/Vector3.h>
 #include <angles/angles.h>
-
+#include <memory>
 ros::Publisher velocity;
 ros::Subscriber odom_sub;
 ros::Subscriber tf_sub;
@@ -20,7 +20,8 @@ ros::Subscriber plan_sub;
 
 tf::Quaternion current_quat;
 tf::Vector3 current_pos;
-std::shared_ptr<tf::TransformListener> listener;
+tf::TransformListener* listener;
+
 void UpdatePosition(const tf::StampedTransform& transform)
 {
 	current_pos.setX(transform.getOrigin().x());
@@ -38,7 +39,9 @@ void GetUpdatedTransform()
 		try
 		{
 			ros::Time time = ros::Time(0);
-			if (listener->waitForTransform("/odom", "/base_link", time, ros::Duration::fromSec(0.01)))
+			ros::Duration duration;
+			duration = duration.fromSec(0.01);
+			if (listener->waitForTransform("/odom", "/base_link", time, duration))
 			{
 				listener->lookupTransform("/odom", "/base_link", time, transform);
 				UpdatePosition(transform);
@@ -116,12 +119,14 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "follow_carrot_node");
 	ros::NodeHandle n;
 
-	listener = std::make_shared<tf::TransformListener>();
+	listener = new tf::TransformListener();
 
 	velocity = n.advertise<geometry_msgs::Twist>("/stagesim/cmd_vel", 10);
 	plan_sub = n.subscribe("assignment3/plan", 10, PlanCallback);
 
 	ros::spin();
+
+	delete listener;
 
 	return 0;
 }
