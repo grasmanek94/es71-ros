@@ -21,7 +21,6 @@ ros::Publisher plan;
 tf::Quaternion current_quat;
 tf::Vector3 current_pos;
 
-void CreatePlan(double size);
 void OdomCallback(const nav_msgs::OdometryConstPtr& message)
 {
 	tf::quaternionMsgToTF(message->pose.pose.orientation, current_quat);
@@ -30,37 +29,34 @@ void OdomCallback(const nav_msgs::OdometryConstPtr& message)
 	current_pos.setY(message->pose.pose.position.y);
 }
 
-void GoalCallBack(const assignment3::Goal::ConstPtr& message)
-{
-	CreatePlan(message->size);
-}
-
 void CreatePlan(double size)
 {
-	
 	nav_msgs::Path targetpath;
-	
+
 	for (int i = 0; i < 4; i++)
 	{
 		geometry_msgs::PoseStamped plannedPath;
 
 		plannedPath.pose.position.x = current_pos.getX() + size * std::cos(angles::normalize_angle(angles::from_degrees(90.0*i)));
 		plannedPath.pose.position.y = current_pos.getY() + size * std::sin(angles::normalize_angle(angles::from_degrees(90.0*i)));
-		plannedPath.pose.orientation = tf::createQuaternionMsgFromYaw(angles::normalize_angle(angles::from_degrees(90.0*i)));
+		plannedPath.pose.orientation = tf::createQuaternionMsgFromYaw(angles::normalize_angle(angles::from_degrees(90.0*(i + 1))));
 
 		targetpath.poses.push_back(plannedPath);
 	}
-	
-	plan.publish(targetpath);
 
-	//end with plan.advertise(posestamp array);
+	plan.publish(targetpath);
+}
+
+void GoalCallBack(const assignment3::Goal::ConstPtr& message)
+{
+	CreatePlan(message->size);
 }
 
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "rectangle_planner_node");
 	ros::NodeHandle n;
-	
+
 	odom = n.subscribe("/stagesim/odom", 10, OdomCallback);
 	goal = n.subscribe("/assignment3/goal", 10, GoalCallBack);
 	plan = n.advertise<nav_msgs::Path>("/stagesim/plan", 10);

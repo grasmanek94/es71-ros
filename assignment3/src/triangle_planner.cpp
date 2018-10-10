@@ -21,8 +21,6 @@ ros::Publisher plan;
 tf::Quaternion current_quat;
 tf::Vector3 current_pos;
 
-void CreatePlan(double size);
-
 void OdomCallback(const nav_msgs::OdometryConstPtr& message)
 {
 	tf::quaternionMsgToTF(message->pose.pose.orientation, current_quat);
@@ -31,40 +29,36 @@ void OdomCallback(const nav_msgs::OdometryConstPtr& message)
 	current_pos.setY(message->pose.pose.position.y);
 }
 
-void GoalCallBack(const assignment3::Goal::ConstPtr& message)
-{
-	CreatePlan(message->size);
-}
-
 void CreatePlan(double size)
 {
-	
-		geometry_msgs::PoseStamped plannedPath[3];
+	geometry_msgs::PoseStamped plannedPath[3];
 
-		plannedPath[0].pose.position.x = size + current_pos.getX();
-		plannedPath[0].pose.position.y = current_pos.getY();
-		plannedPath[0].pose.orientation = tf::createQuaternionMsgFromYaw(angles::from_degrees(120));
+	plannedPath[0].pose.position.x = size + current_pos.getX();
+	plannedPath[0].pose.position.y = current_pos.getY();
+	plannedPath[0].pose.orientation = tf::createQuaternionMsgFromYaw(angles::from_degrees(120));
 
-		plannedPath[1].pose.position.x = size + current_pos.getX() / 2;
-		plannedPath[1].pose.position.y = size * sin(angles::from_degrees(60));
-		plannedPath[1].pose.orientation = tf::createQuaternionMsgFromYaw(angles::from_degrees(120));
+	plannedPath[1].pose.position.x = size + current_pos.getX() / 2;
+	plannedPath[1].pose.position.y = size * sin(angles::from_degrees(60));
+	plannedPath[1].pose.orientation = tf::createQuaternionMsgFromYaw(angles::from_degrees(240));
 
-		plannedPath[2].pose.position.x = current_pos.getX();
-		plannedPath[2].pose.position.y = current_pos.getY();
-		plannedPath[2].pose.orientation = tf::createQuaternionMsgFromYaw(angles::from_degrees(120));
+	plannedPath[2].pose.position.x = current_pos.getX();
+	plannedPath[2].pose.position.y = current_pos.getY();
+	plannedPath[2].pose.orientation = tf::createQuaternionMsgFromYaw(angles::from_degrees(0));
 
+	nav_msgs::Path targetpath;
 
-		nav_msgs::Path targetpath;
-
-		for (int i = 0; i < 3; i++)
-		{
-			targetpath.poses.push_back(plannedPath[i]);
-		}
-	
+	for (int i = 0; i < 3; i++)
+	{
+		targetpath.poses.push_back(plannedPath[i]);
+	}
 
 	plan.publish(targetpath);
 }
 
+void GoalCallBack(const assignment3::Goal::ConstPtr& message)
+{
+	CreatePlan(message->size);
+}
 
 int main(int argc, char **argv)
 {
