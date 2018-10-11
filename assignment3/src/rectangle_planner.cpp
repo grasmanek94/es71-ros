@@ -33,12 +33,14 @@ void CreatePlan(double size)
 {
 	nav_msgs::Path targetpath;
 
+	geometry_msgs::PoseStamped plannedPath;
+	plannedPath.pose.position.x = current_pos.getX();
+	plannedPath.pose.position.y = current_pos.getY();
+
 	for (int i = 0; i < 4; i++)
 	{
-		geometry_msgs::PoseStamped plannedPath;
-
-		plannedPath.pose.position.x = current_pos.getX() + size * std::cos(angles::normalize_angle(angles::from_degrees(90.0*i)));
-		plannedPath.pose.position.y = current_pos.getY() + size * std::sin(angles::normalize_angle(angles::from_degrees(90.0*i)));
+		plannedPath.pose.position.x += size * std::cos(angles::normalize_angle(angles::from_degrees(90.0*i)));
+		plannedPath.pose.position.y += size * std::sin(angles::normalize_angle(angles::from_degrees(90.0*i)));
 		plannedPath.pose.orientation = tf::createQuaternionMsgFromYaw(angles::normalize_angle(angles::from_degrees(90.0*(i + 1))));
 
 		targetpath.poses.push_back(plannedPath);
