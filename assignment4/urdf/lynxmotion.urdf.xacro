@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
-<robot name="Lynxmotion AL5B">
-
+<robot name="Lynxmotion AL5B" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="base_height" value="0.069" />
+  <xacro:property name="base_radius" value="${6.193/4.803*base_height}" />
   <xacro:property name="shoulder_to_elbow" value="0.12065" />
   <xacro:property name="elbow_to_wrist" value="0.127" />
   <xacro:property name="wrist_to_tip" value="0.085725" />
@@ -8,8 +9,9 @@
 
   <link name="base_link">
     <visual>
+      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.6" radius="0.2"/>
+        <cylinder length="${base_height}" radius="${base_radius}"/>
       </geometry>
     </visual>
   </link>
