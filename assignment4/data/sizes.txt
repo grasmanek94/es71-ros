@@ -1,0 +1,4 @@
+Shoulder2Elbow: 4.75 inch = 0.12065 m
+Elbow2Wrist: 5.00 inch = 0.127 m
+Wrist2Tip: 3.375 inch = 0.085725 m
+Height reaching up: 15.75 inch = 0.40005 m
