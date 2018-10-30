@@ -37,8 +37,8 @@ void CreatePlan(double size)
 	plannedPath[0].pose.position.y = current_pos.getY();
 	plannedPath[0].pose.orientation = tf::createQuaternionMsgFromYaw(angles::from_degrees(120));
 
-	plannedPath[1].pose.position.x = size + current_pos.getX() / 2;
-	plannedPath[1].pose.position.y = size * sin(angles::from_degrees(60));
+	plannedPath[1].pose.position.x = (size / 2) + current_pos.getX();
+	plannedPath[1].pose.position.y = size * sin(angles::from_degrees(60)) + current_pos.getY();
 	plannedPath[1].pose.orientation = tf::createQuaternionMsgFromYaw(angles::from_degrees(240));
 
 	plannedPath[2].pose.position.x = current_pos.getX();
