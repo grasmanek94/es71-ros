@@ -1,0 +1,16 @@
+<package>
+  <description brief="assignment4">
+
+     assignment4
+
+  </description>
+  <author>Rafał Grasman, Menno Broeders</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/assignment3</url>
+  <depend package="xacro"/>
+  <depend package="urdfdom"/>
+
+</package>
+
+
