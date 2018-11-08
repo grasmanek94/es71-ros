@@ -157,4 +157,18 @@
     <limit lower="${-base_servo_len*0.75/2+base_servo_width*0.25*(3/4)}" upper="0" effort="0" velocity="3.67"/>
   </joint>
 
+  <link name="tip_box_servo">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_servo_width*0.75/2} ${base_servo_width*0.75/2} ${base_servo_len*0.75}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="tip_box_tip_box_servo_joint" type="fixed">
+    <origin xyz="${-base_servo_len*0.75/4} 0 ${base_servo_len*0.75-base_servo_width*0.75/4}" rpy="${-PI/2} 0 0"/>
+    <parent link="tip_box"/>
+    <child link="tip_box_servo"/>
+  </joint>
 </robot>
