@@ -12,11 +12,6 @@
   <xacro:property name="wrist_to_tip" value="0.085725" />
   <xacro:property name="height_reaching_up" value="0.40005" />
 
-  <xacro:property name="base_servo_origin_x" value="${base_servo_len/4}" />
-  <xacro:property name="base_servo_origin_z" value="${base_height+base_servo_width/2}" />
-  <xacro:property name="base_servo_link_x" value="${-base_radius/2+base_servo_len/2}" />
-  <xacro:property name="base_servo_link_z" value="${base_height/2}" />
-
   <link name="base_link">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
