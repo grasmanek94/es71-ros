@@ -1,18 +1,165 @@
 <?xml version="1.0"?>
 <robot name="Lynxmotion AL5B" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="PI" value="3.1415" />
+  <xacro:property name="deg2rad" value="0.017453293" />
   <xacro:property name="base_height" value="0.069" />
   <xacro:property name="base_radius" value="${6.193/4.803*base_height}" />
+  <xacro:property name="base_servo_len" value="${base_radius}" />
+  <xacro:property name="base_servo_width" value="${base_radius*0.75}" />
+
   <xacro:property name="shoulder_to_elbow" value="0.12065" />
   <xacro:property name="elbow_to_wrist" value="0.127" />
   <xacro:property name="wrist_to_tip" value="0.085725" />
   <xacro:property name="height_reaching_up" value="0.40005" />
 
+  <xacro:property name="base_servo_origin_x" value="${base_servo_len/4}" />
+  <xacro:property name="base_servo_origin_z" value="${base_height+base_servo_width/2}" />
+  <xacro:property name="base_servo_link_x" value="${-base_radius/2+base_servo_len/2}" />
+  <xacro:property name="base_servo_link_z" value="${base_height/2}" />
+
   <link name="base_link">
     <visual>
-      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
         <cylinder length="${base_height}" radius="${base_radius}"/>
       </geometry>
     </visual>
   </link>
+
+  <link name="shoulder">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_servo_len} ${base_servo_width} ${base_servo_width}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="base_shoulder_joint" type="revolute">
+    <origin xyz="${base_radius/3} 0 ${base_height}" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="shoulder"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-${PI/2}" upper="${PI/2}" effort="0" velocity="3.67"/>
+  </joint>
+
+  <link name="elbow">
+    <visual>
+      <origin xyz="0 0 ${shoulder_to_elbow/2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${shoulder_to_elbow*0.2} ${shoulder_to_elbow*0.75} ${shoulder_to_elbow}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="shoulder_elbow_joint" type="revolute">
+    <origin xyz="0 0 0" rpy="0 ${30*deg2rad} 0"/>
+    <parent link="shoulder"/>
+    <child link="elbow"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-${PI/2}" upper="${PI/2}" effort="0" velocity="3.67"/>
+  </joint>
+
+  <link name="elbow_box">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_servo_width*0.75} ${base_servo_width*0.75} ${base_servo_len*0.75}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="elbow_box_elbow_joint" type="revolute">
+    <origin xyz="0 0 ${shoulder_to_elbow}" rpy="0 ${-120*deg2rad} 0"/>
+    <parent link="elbow"/>
+    <child link="elbow_box"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-${30*deg2rad}" upper="${PI}" effort="0" velocity="3.67"/>
+  </joint>
+
+  <link name="elbow_wrist_pipe">
+    <visual>
+      <origin xyz="0 0 ${base_servo_len/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${base_servo_width*0.33}" length="${base_servo_len}" />
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="elbow_box_elbow_wrist_pipe_joint" type="revolute">
+    <origin xyz="0 0 ${base_servo_len*0.75/2}" rpy="0 0 0"/>
+    <parent link="elbow_box"/>
+    <child link="elbow_wrist_pipe"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-${PI/2}" upper="${PI/2}" effort="0" velocity="3.67"/>
+  </joint>
+
+  <link name="wrist_box">
+    <visual>
+      <origin xyz="0 0 ${base_servo_len*0.75/2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_servo_width*0.75} ${base_servo_width*0.75} ${base_servo_len*0.75}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="elbow_wrist_pipe_wrist_box_joint" type="revolute">
+    <origin xyz="0 0 ${base_servo_len}" rpy="0 0 0"/>
+    <parent link="elbow_wrist_pipe"/>
+    <child link="wrist_box"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-${PI/2}" upper="${PI/2}" effort="0" velocity="3.67"/>
+  </joint>
+
+  <link name="tip_box">
+    <visual>
+      <origin xyz="0 0 ${base_servo_len*0.75/2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_servo_width*0.50} ${base_servo_len*0.75} ${base_servo_len*0.75}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="wrist_box_tip_box_joint" type="revolute">
+    <origin xyz="0 0 ${base_servo_len*0.75*0.66}" rpy="0 0 0"/>
+    <parent link="wrist_box"/>
+    <child link="tip_box"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-${PI/2}" upper="${PI/2}" effort="0" velocity="3.67"/>
+  </joint>
+
+  <link name="gripper_l">
+    <visual>
+      <origin xyz="0 0 ${base_servo_width*0.25}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_servo_width*0.25} ${base_servo_width*0.25} ${base_servo_width*0.5}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <link name="gripper_r">
+    <visual>
+      <origin xyz="0 0 ${base_servo_width*0.25}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_servo_width*0.25} ${base_servo_width*0.25} ${base_servo_width*0.5}"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="tip_box_gripper_l_joint" type="prismatic">
+    <origin xyz="0 ${-base_servo_len*0.5+base_servo_width*0.25} ${base_servo_len*0.75}" rpy="0 0 0"/>
+    <parent link="tip_box"/>
+    <child link="gripper_l"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0" upper="${base_servo_len*0.75/2-base_servo_width*0.25*(3/4)}" effort="0" velocity="3.67"/>
+  </joint>
+
+  <joint name="tip_box_gripper_r_joint" type="prismatic">
+    <origin xyz="0 ${base_servo_len*0.5-base_servo_width*0.25} ${base_servo_len*0.75}" rpy="0 0 0"/>
+    <parent link="tip_box"/>
+    <child link="gripper_r"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="${-base_servo_len*0.75/2+base_servo_width*0.25*(3/4)}" upper="0" effort="0" velocity="3.67"/>
+  </joint>
+
 </robot>
