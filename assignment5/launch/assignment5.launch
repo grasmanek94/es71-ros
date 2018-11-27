@@ -1,5 +1,5 @@
 <launch>
   <include file="$(find turtlebot_actions)/launch/server_turtlebot_move.launch"/>
   <node pkg="turtlesim" name="sim" type="turtlesim_node"/>
-  <node pkg="assignment5" name="draw_triangle" type="draw_triangle_node"/>
+  <node pkg="assignment5" name="draw_triangle" type="assignment5_node"/>
 </launch>

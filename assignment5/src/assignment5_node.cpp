@@ -215,7 +215,7 @@ void MoveRotateCallback(const assignment5::MoveRotate::ConstPtr& message)
 	MoveRotate(message->speed, message->distance, message->angle);
 }
 
-std::string name = "draw_triangle";
+std::string name = "assignment5_node";
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, name);

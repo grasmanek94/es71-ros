@@ -13,4 +13,5 @@ catkin_make
 
 dan:
 
+source devel/setup.bash
 roslaunch enzv
