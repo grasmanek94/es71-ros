@@ -109,7 +109,7 @@ void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& 
 	}
 }
 
-void SimpleDoneCallback(const actionlib::SimpleClientGoalState& state, const turtlebot_actions::TurtlebotMoveResultConstPtr& result)
+void SimpleDoneCallback(const actionlib::SimpleClientGoalState& state, const turtlebot_actions::TurtlebotMoveResult::ConstPtr& result)
 {
 
 }
@@ -119,7 +119,7 @@ void SimpleActiveCallback()
 
 }
 
-void SimpleFeedbackCallback(const turtlebot_actions::TurtlebotMoveFeedbackConstPtr& feedback)
+void SimpleFeedbackCallback(const turtlebot_actions::TurtlebotMoveFeedback::ConstPtr& feedback)
 {
 
 }
@@ -127,16 +127,16 @@ void SimpleFeedbackCallback(const turtlebot_actions::TurtlebotMoveFeedbackConstP
 void MoveRotate(double speed, double move_distance, double rotate_degrees)
 {
 	// turn first
-	turtlebot_actions::TurtlebotMoveActionGoal goal;
+	turtlebot_actions::TurtlebotMoveGoal goal;
 
-	goal.goal.forward_distance = 0.0f;
-	goal.goal.turn_distance = rotate_degrees;
+	goal.forward_distance = 0.0f;
+	goal.turn_distance = rotate_degrees;
 	client.sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
 	client.waitForResult();
 
 	// then go forward
-	goal.goal.forward_distance = move_distance;
-	goal.goal.turn_distance = 0.0f;
+	goal.forward_distance = move_distance;
+	goal.turn_distance = 0.0f;
 	client.sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
 	client.waitForResult();
 }
