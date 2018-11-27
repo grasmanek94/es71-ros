@@ -6,12 +6,16 @@
 #include <std_msgs/String.h>
 #include <geometry_msgs/Twist.h>
 #include <turtlesim/Pose.h>
-#include "assignment5/Triangle.h"
-#include "assignment5/MoveRotate.h"
 
-ros::Publisher velocity_publisher;
+#include <actionlib/client/simple_action_client.h>
+#include <turtlebot_actions/TurtlebotMoveAction.h>
+
+#include "assignment5/Triangle.h"
+
+typedef actionlib::SimpleActionClient<turtlebot_actions::TurtlebotMoveAction> Client;
+Client client("turtlebot_move", true); // true -> don't need ros::spin()
+
 ros::Subscriber subscriber_draw_triangle;
-ros::Subscriber subscriber_move_rotate;
 ros::Subscriber pose_subscriber;
 
 turtlesim::Pose turtlesim_pose;
@@ -105,59 +109,36 @@ void FixBounds(const turtlesim::Pose& current, turtlesim::Pose& target, double& 
 	}
 }
 
+void SimpleDoneCallback(const actionlib::SimpleClientGoalState& state, const turtlebot_actions::TurtlebotMoveResultConstPtr& result)
+{
+
+}
+
+void SimpleActiveCallback()
+{
+
+}
+
+void SimpleFeedbackCallback(const turtlebot_actions::TurtlebotMoveFeedbackConstPtr& feedback)
+{
+
+}
+
 void MoveRotate(double speed, double move_distance, double rotate_degrees)
 {
-	geometry_msgs::Twist twist;
-	bool loop;
+	// turn first
+	turtlebot_actions::TurtlebotMoveActionGoal goal;
 
-	ros::Rate loop_rate(1000);
+	goal.goal.forward_distance = 0.0f;
+	goal.goal.turn_distance = rotate_degrees;
+	client.sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
+	client.waitForResult();
 
-	if (rotate_degrees != 0.0)
-	{
-		ros::spinOnce();
-		turtlesim::Pose saved_pose = turtlesim_pose;
-
-		double rotate_radians = ClampAngle(Deg2Rad(rotate_degrees));
-		double target_radians = ClampAngle(saved_pose.theta + rotate_radians);
-
-		do
-		{
-			double delta_angle = target_radians - ClampAngle(turtlesim_pose.theta);
-
-			twist.angular.z = std::max(speed * std::abs(delta_angle / rotate_radians), 0.05) * Sign(delta_angle);
-
-			loop = std::abs(delta_angle) > 0.001;
-
-			velocity_publisher.publish(twist);
-			ros::spinOnce();
-			loop_rate.sleep();
-		} while (loop);
-
-		twist.angular.z = 0.0;
-		velocity_publisher.publish(twist);
-	}
-
-	if (move_distance != 0.0)
-	{
-		ros::spinOnce();
-		turtlesim::Pose target_pose = GetTargetPosition(turtlesim_pose, move_distance);
-		FixBounds(turtlesim_pose, target_pose, move_distance);
-
-		do
-		{
-			double delta_distance = Distance(target_pose, turtlesim_pose);
-			twist.linear.x = std::max(speed * std::abs(delta_distance / move_distance), 0.1) * Sign(delta_distance);
-
-			loop = std::abs(delta_distance) > 0.005;
-
-			velocity_publisher.publish(twist);
-			ros::spinOnce();
-			loop_rate.sleep();
-		} while (loop);
-
-		twist.linear.x = 0.0;
-		velocity_publisher.publish(twist);
-	}
+	// then go forward
+	goal.goal.forward_distance = move_distance;
+	goal.goal.turn_distance = 0.0f;
+	client.sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
+	client.waitForResult();
 }
 
 void SetAngle(double radians)
@@ -210,21 +191,16 @@ void DrawTriangleCallback(const assignment5::Triangle::ConstPtr& message)
 	DrawTriangle(message->sideLength, message->clockwise);
 }
 
-void MoveRotateCallback(const assignment5::MoveRotate::ConstPtr& message)
-{
-	MoveRotate(message->speed, message->distance, message->angle);
-}
-
 std::string name = "assignment5_node";
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, name);
 	ros::NodeHandle n;
 
-	velocity_publisher = n.advertise<geometry_msgs::Twist>("turtle1/cmd_vel", 10);
 	pose_subscriber = n.subscribe("turtle1/pose", 10, PoseCallback);
 	subscriber_draw_triangle = n.subscribe(name + "/cmd", 10, DrawTriangleCallback);
-	subscriber_move_rotate = n.subscribe(name + "/move_rotate", 10, MoveRotateCallback);
+
+	client.waitForServer();
 
 	std::cout << "main: Prepared callbacks, spinning..." << std::endl;
 
