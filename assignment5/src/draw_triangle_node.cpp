@@ -6,8 +6,8 @@
 #include <std_msgs/String.h>
 #include <geometry_msgs/Twist.h>
 #include <turtlesim/Pose.h>
-#include <assignment1/Triangle.h>
-#include <assignment1/MoveRotate.h>
+#include "assignment5/Triangle.h"
+#include "assignment5/MoveRotate.h"
 
 ros::Publisher velocity_publisher;
 ros::Subscriber subscriber_draw_triangle;
@@ -205,12 +205,12 @@ void DrawTriangle(float side_length, bool cw)
 	}
 }
 
-void DrawTriangleCallback(const assignment1::Triangle::ConstPtr& message)
+void DrawTriangleCallback(const assignment5::Triangle::ConstPtr& message)
 {
 	DrawTriangle(message->sideLength, message->clockwise);
 }
 
-void MoveRotateCallback(const assignment1::MoveRotate::ConstPtr& message)
+void MoveRotateCallback(const assignment5::MoveRotate::ConstPtr& message)
 {
 	MoveRotate(message->speed, message->distance, message->angle);
 }
