@@ -13,7 +13,7 @@
 #include "assignment5/Triangle.h"
 
 typedef actionlib::SimpleActionClient<turtlebot_actions::TurtlebotMoveAction> Client;
-Client client("turtlebot_move", true); // true -> don't need ros::spin()
+Client *client;
 
 ros::Subscriber subscriber_draw_triangle;
 ros::Subscriber pose_subscriber;
@@ -131,14 +131,14 @@ void MoveRotate(double speed, double move_distance, double rotate_degrees)
 
 	goal.forward_distance = 0.0f;
 	goal.turn_distance = rotate_degrees;
-	client.sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
-	client.waitForResult();
+	client->sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
+	client->waitForResult();
 
 	// then go forward
 	goal.forward_distance = move_distance;
 	goal.turn_distance = 0.0f;
-	client.sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
-	client.waitForResult();
+	client->sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
+	client->waitForResult();
 }
 
 void SetAngle(double radians)
@@ -197,10 +197,11 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, name);
 	ros::NodeHandle n;
 
+	client = new Client("turtlebot_move", true); // true -> don't need ros::spin()
 	pose_subscriber = n.subscribe("turtle1/pose", 10, PoseCallback);
 	subscriber_draw_triangle = n.subscribe(name + "/cmd", 10, DrawTriangleCallback);
 
-	client.waitForServer();
+	client->waitForServer();
 
 	std::cout << "main: Prepared callbacks, spinning..." << std::endl;
 
