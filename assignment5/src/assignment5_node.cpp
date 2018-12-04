@@ -13,7 +13,6 @@
 #include "assignment5/Triangle.h"
 
 typedef actionlib::SimpleActionClient<turtlebot_actions::TurtlebotMoveAction> Client;
-Client *client;
 
 ros::Subscriber subscriber_draw_triangle;
 ros::Subscriber pose_subscriber;
@@ -126,19 +125,28 @@ void SimpleFeedbackCallback(const turtlebot_actions::TurtlebotMoveFeedback::Cons
 
 void MoveRotate(double speed, double move_distance, double rotate_degrees)
 {
+	std::cout << "a5n-m1" << std::endl;
+	Client client("/turtlebot_move", true);
+
+	std::cout << "a5n-m2" << std::endl;
+	client.waitForServer();
+
+	std::cout << "a5n-m3" << std::endl;
 	// turn first
 	turtlebot_actions::TurtlebotMoveGoal goal;
 
 	goal.forward_distance = 0.0f;
 	goal.turn_distance = rotate_degrees;
-	client->sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
-	client->waitForResult();
+	client.sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
+	client.waitForResult();
 
 	// then go forward
 	goal.forward_distance = move_distance;
 	goal.turn_distance = 0.0f;
-	client->sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
-	client->waitForResult();
+	client.sendGoal(goal, &SimpleDoneCallback, &SimpleActiveCallback, &SimpleFeedbackCallback);
+	client.waitForResult();
+
+	std::cout << "a5n-m4" << std::endl;
 }
 
 void SetAngle(double radians)
@@ -188,22 +196,20 @@ void DrawTriangle(float side_length, bool cw)
 
 void DrawTriangleCallback(const assignment5::Triangle::ConstPtr& message)
 {
-	DrawTriangle(message->sideLength, message->clockwise);
+	DrawTriangle(message->sideLength, message->cw);
 }
 
-std::string name = "assignment5_node";
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, name);
+	std::cout << "a5n-1" << std::endl;
+	ros::init(argc, argv, "assignment5_node");
 	ros::NodeHandle n;
 
-	client = new Client("turtlebot_move", true); // true -> don't need ros::spin()
+	std::cout << "a5n-2" << std::endl;
 	pose_subscriber = n.subscribe("turtle1/pose", 10, PoseCallback);
-	subscriber_draw_triangle = n.subscribe(name + "/cmd", 10, DrawTriangleCallback);
+	subscriber_draw_triangle = n.subscribe("/cmd", 10, DrawTriangleCallback);
 
-	client->waitForServer();
-
-	std::cout << "main: Prepared callbacks, spinning..." << std::endl;
+	std::cout << "a5n-3" << std::endl;
 
 	ros::spin();
 
