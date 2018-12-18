@@ -8,6 +8,9 @@
  */
 class Arbiter
 {
+public:
+	Arbiter();
+
 protected:
 	ros::NodeHandle handle;
 	ros::NodeHandle parent_handle;
