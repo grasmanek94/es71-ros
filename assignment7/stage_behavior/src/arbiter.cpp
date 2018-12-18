@@ -13,7 +13,7 @@ public:
 	// members
 
 	// methods
-  Arbiter(double rate = 100.0);
+  Arbiter();
 
 protected:
 	// members
@@ -39,7 +39,7 @@ Arbiter::Arbiter()
 		cmd_vel.push_back(handle.subscribe<geometry_msgs::Twist>("cmd_vel" + std::to_string(i), queue_size, boost::bind(&Arbiter::velocityUpdate, this, _1, i)));
 	}
 
-	cmd_vel_pub_ = handle.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+	pub = handle.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 	timer = handle.createTimer(ros::Duration(1.0 / rate), boost::bind(&Arbiter::tick, this));
 }
 
