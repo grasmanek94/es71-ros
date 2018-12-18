@@ -25,6 +25,8 @@ protected:
 	geometry_msgs::Twist vel;
 	int priority;
 	// methods
+	void tick();
+	void velocityUpdate(const geometry_msgs::Twist::ConstPtr& cmd, int prio);
 };
 
 Arbiter::Arbiter()
