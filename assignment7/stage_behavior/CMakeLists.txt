@@ -112,6 +112,7 @@ include_directories(
 add_executable(arbiter src/arbiter.cpp)
 add_executable(cruise_behavior src/cruise_behavior.cpp)
 add_executable(escape_behavior src/escape_behavior.cpp)
+add_executable(escape_behavior src/seek_behavior.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

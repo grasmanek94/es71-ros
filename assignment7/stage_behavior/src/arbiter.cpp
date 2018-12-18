@@ -3,40 +3,40 @@
 #include <vector>
 #include <string>
 
-const static int velocities = 3;
 /**
  * Priority based arbiter, forwards highest priority commands
  */
 class Arbiter
 {
-public:
-	// members
-
-	// methods
-  Arbiter();
-
 protected:
-	// members
 	ros::NodeHandle handle;
+	ros::NodeHandle parent_handle;
+
 	std::vector<ros::Subscriber> cmd_vel;
 	ros::Publisher pub;
 	ros::Timer timer;
+	int inputs;
 
 	geometry_msgs::Twist vel;
 	int priority;
-	// methods
+
 	void tick();
 	void velocityUpdate(const geometry_msgs::Twist::ConstPtr& cmd, int prio);
 };
 
-Arbiter::Arbiter()
+Arbiter::Arbiter() :
+	parent_handle("~"),
+	inputs(3)
 {
-	const double rate = 100.0; // Hz
 	const int queue_size = 100; // Items
-	
-	priority = velocities;
+	double rate = 100.0; // Hz
 
-	for (int i = 0; i < velocities; ++i)
+	parent_handle.param("inputs", inputs, inputs);
+	parent_handle.param("publish_rate", rate, rate);
+
+	priority = inputs;
+
+	for (int i = 0; i < inputs; ++i)
 	{
 		cmd_vel.push_back(handle.subscribe<geometry_msgs::Twist>("cmd_vel" + std::to_string(i), queue_size, boost::bind(&Arbiter::velocityUpdate, this, _1, i)));
 	}
@@ -47,9 +47,9 @@ Arbiter::Arbiter()
 
 void Arbiter::tick() 
 {
-	if (priority != velocities) 
+	if (priority != inputs)
 	{
-		priority = velocities;
+		priority = inputs;
 		pub.publish(vel);
 	}
 }
